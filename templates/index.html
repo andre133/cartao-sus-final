@@ -1,0 +1,106 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Gerador de Cartão SUS</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 30px;
+      text-align: center;
+    }
+    .formulario {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      display: inline-block;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+    input, select, button {
+      margin: 10px;
+      padding: 10px;
+      font-size: 16px;
+      width: 250px;
+    }
+    canvas {
+      margin-top: 20px;
+      border: 1px dashed #aaa;
+      background: white;
+    }
+  </style>
+</head>
+<body>
+  <h1>Gerador de Cartão SUS</h1>
+  
+  <div class="formulario">
+    <input type="text" id="nome" placeholder="Nome do beneficiário" required><br>
+    <input type="date" id="data" placeholder="Data de nascimento" required><br>
+    <select id="sexo">
+      <option value="F">Feminino</option>
+      <option value="M">Masculino</option>
+    </select><br>
+    <input type="text" id="cns" placeholder="Número do CNS" maxlength="15" required><br>
+    <button onclick="gerarCartao()">Gerar Cartão</button>
+  </div>
+
+  <canvas id="canvas" width="800" height="271"></canvas>
+
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <script>
+    function gerarCartao() {
+      const nome = document.getElementById('nome').value;
+      const data = document.getElementById('data').value;
+      const sexo = document.getElementById('sexo').value;
+      const cns = document.getElementById('cns').value;
+
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+
+      const imagem = new Image();
+      imagem.src = 'CNS.png';
+      imagem.onload = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(imagem, 0, 0);
+
+        ctx.fillStyle = 'black';
+
+        // Nome digitado
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'left';
+        ctx.fillText(nome, 470, 50);
+
+        // Data de nascimento e sexo
+        ctx.font = '13px Arial';
+        ctx.fillText(`Data Nasc.: ${data.split('-').reverse().join('/')}`, 470, 75);
+        ctx.fillText(`Sexo: ${sexo}`, 650, 75);
+
+        // Número CNS maior
+        ctx.font = 'bold 24px Arial';
+        ctx.textAlign = 'center';
+        const cnsFormatado = cns.replace(/(.{3})(.{4})(.{4})(.{4})/, "$1 $2 $3 $4");
+        ctx.fillText(cnsFormatado, 600, 105);
+
+        // Código de barras
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        JsBarcode(svg, cns, {
+          format: "CODE128",
+          width: 2,
+          height: 40,
+          displayValue: false,
+          margin: 0
+        });
+
+        const svgData = new XMLSerializer().serializeToString(svg);
+        const imgBarra = new Image();
+        imgBarra.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+        imgBarra.onload = () => {
+          ctx.drawImage(imgBarra, 470, 115);
+        };
+      };
+    }
+  </script>
+</body>
+</html>
